@@ -4,47 +4,49 @@ import './App.scss';
 import NavBar from './NavBar';
 import ChatBar from './ChatBar';
 import MessageList from './MessageList';
-// import messages from './lib/messages';
+// import lib from './lib/messages';
 
 // create a message reducer to update the state
+
+// return the state from the corresponding action
+
+// Create a custom hook to connect to WebSocket
+
 const messageReducer = (state, action) => {
+	// type: newMessage or updateUser
+
 	const actions = {
-		incomingNotification: {
+		// adding a new message to the state
+		newMessage: {
 			...state,
 			messages: [ ...state.messages, action.message ]
 		},
-		incomingMessage: {
+		updateUser: {
 			...state,
-			messages: [ ...state.messages, action.message ]
-		},
-		updateUsername: {
-			...state,
-			currentUser: {
-				name: action.message
-			}
+			currentUser: { name: action.message }
 		}
 	};
 
 	if (!actions[action.type]) {
-		throw new Error('Unkown action type');
+		throw new Error('Unknown message type');
 	}
 
-	// return the state from the corresponding action
 	return actions[action.type];
 };
 
-// Create a custom hook to connect to WebSocket
 const useSocket = (url) => {
-	const [ socketServer, setSocketServer ] = useState(null);
-	const [ connected, setConnected ] = useState(false);
-
-	// use messageReducer to manage the messages state
+	// use the reducer
 	const [ state, dispatch ] = useReducer(messageReducer, {
 		currentUser: { name: 'Anonymous' },
 		messages: []
 	});
 
+	// Create 2 states: socketServer, connected
+	const [ socketServer, setSocketServer ] = useState(null);
+	const [ connected, setConnected ] = useState(false);
+
 	// useEffect to connect to WebSocket
+
 	useEffect(
 		() => {
 			setSocketServer(new WebSocket(url));
@@ -53,65 +55,67 @@ const useSocket = (url) => {
 		[ url ]
 	);
 
-	// useEffect to attach event listeners onopen and onmessage
 	useEffect(() => {
 		if (connected) {
-			socketServer.onopen = (event) => {
-				console.log('Client connected to server');
+			socketServer.onopen = () => {
+				console.log('client connected to server');
 			};
 			socketServer.onmessage = (event) => {
 				const message = JSON.parse(event.data);
-				console.log(message);
-				switch (message.type) {
-					case 'incomingNotification':
-						dispatch({ type: 'incomingNotification', message });
-						break;
-					case 'incomingMessage':
-						dispatch({ type: 'incomingMessage', message });
-						break;
-					default:
-						console.log('unkown message type');
-				}
+
+				// update the list of messages
+				dispatch({ type: 'newMessage', message });
 			};
+
+			socketServer.onClose = () => console.log('Client disconnected from server');
 		}
 	});
 
-	return {
-		state,
-		dispatch,
-		socketServer
-	};
+	return { socketServer, state, dispatch };
 };
 
+// useEffect to attach event listeners onopen and onmessage
+
+// return state, dispatch,socketServer
+
 function App() {
-	const { state, dispatch, socketServer } = useSocket('ws://localhost:5000');
+	// use the custom hook
+	const { socketServer, state, dispatch } = useSocket('ws://localhost:5000');
 
 	// Sending message from the chat to the server
 	const sendMessage = (message) => {
-		console.log('sending message', message);
-		// build new message object with type, content, username
 		const newMessage = {
 			type: 'postMessage',
 			content: message,
 			username: state.currentUser.name
 		};
 
+		// send a message to the server
 		socketServer.send(JSON.stringify(newMessage));
 	};
 
 	const updateUser = (username) => {
-		// create notification object that the user has changed their username
-		const newNotification = {
+		// {
+		//   type: 'incomingNotification',
+		//   content: 'Anonymous1 changed their name to nomnom',
+		// },
+
+		const newNotificaton = {
 			type: 'postNotification',
-			content: `${state.currentUser.name} has change their name to ${username}`
+			content: `${state.currentUser.name} has changed their name to ${username}`
 		};
+		// updated the current username in the state
+		// lib.currentUser = {
+		// 	name: username
+		// };
 
-		// change the username in the state
-		dispatch({ type: 'updateUsername', message: username });
+		// updating the username in the state
+		dispatch({ type: 'updateUser', message: username });
 
-		// send notification to server
-		socketServer.send(JSON.stringify(newNotification));
+		// send a message to the server
+		socketServer.send(JSON.stringify(newNotificaton));
 	};
+
 	return (
 		<div>
 			<NavBar />

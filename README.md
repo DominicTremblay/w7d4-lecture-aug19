@@ -1,68 +1,104 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Complex State Management
 
-## Available Scripts
+Content
 
-In the project directory, you can run:
+- How to use the `reducer pattern` to manage more complex state
+- How to use WebSocket
 
-### `yarn start`
+## The Reducer Pattern
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### JavaScript Reduce Function
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+- Reduce takes in an array of values and output a single value
 
-### `yarn test`
+To calculate the sum of values in an array, we can do it using forEach:
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```js
+const numbers = [5, 10, 15, 20];
+let total = 0;
+numbers.forEach(nb => (total += nb));
+```
 
-### `yarn build`
+- forEach is `impure`, because it does a _side effect_. It mutates `total` which is define outside the function.
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- A better alternative is to use `reduce` provided by JavaScript that does not produce a side effect.
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+```js
+const numbers = [5, 10, 15, 20];
+const reducer = (accumulator, currentValue) => accumulator + currentValue;
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+console.log(numbers.reduce(reducer));
+```
 
-### `yarn eject`
+### Reducer Pattern
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- Instead of just using arrays, we can use actions that map to state transitions
+- Uses a more _declarative_ state updates
+- Allows to decouple how the state is updated from the action that triggered that update
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Reducer Pattern
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### React useReducer Hook
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+- allows to manage the state using the `reducer pattern`
 
-## Learn More
+```js
+const [state, dispatch] = useReducer(reducerFct, initialState);
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `state` -> contains the value of the current state
+- `dispatch` -> dispatch function invokes the reducer function
+- `reducerFct` -> how to update the state based on the type of action
+- `initial state` -> set the initial value of the state
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- [Demo: Github API Request - useReducer](https://codesandbox.io/s/usereducer-axios-request-nfyn3)
 
-### Code Splitting
+## WebSocket
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+### Limits of the HTTP Protocol
 
-### Analyzing the Bundle Size
+- Since we are in the browser, we have to use HTTP for communication
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+- HTTP wasn't designed for real-time, full-duplex communication
 
-### Making a Progressive Web App
+- There are two main issues with HTTP:
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
+1. Server cannot initiate a request to the client
 
-### Advanced Configuration
+- Web applications were originally developed around a client/server model
+- The Web client is always the initiator of transactions, requesting data from the server
+- There was no mechanism for the server to independently send, or push, data to the client without the client first making a request.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
+2. HTTP requests are not persistent by nature. They are transactional.
 
-### Deployment
+- Client opens
+- Request is made
+- Server processes and sends a response
+- Client closes
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+### Solutions Before WebSockets
 
-### `yarn build` fails to minify
+- `polling` was one of the solution which consists of sending Ajax request every x amount of seconds for new data.
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+PRO: Almost Real time!
+
+CON: this feels horrible, blasting the server with requests
+
+- Unecessary requests inevitable and as a result, many connections are opened and closed needlessly in low-message-rate situations
+
+### Benefits of WebSocket Compared to Other Solutions
+
+- Supported natively in the browser
+- Web Socket removes the overhead and dramatically reduces complexity compared to other solutions
+- It's more scalable
+
+### What is WebSocket
+
+- HTTP is a protocol http://
+- Websockets is a different one ws://
+
+- Communication goes both ways (Full Duplex)
+- The connections remain oponened and client and servers can communicate continuously
+- It's Real Time
+- Useful for web-based games, chatting applications, etc.
+- Not a replacement for HTTP, it's an upgrade (Can't communicate with REST, OAuth)
